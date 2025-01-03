@@ -1,5 +1,5 @@
 param (
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$rssFeedUrl,
     [int]$maxRetries = 3
 )
@@ -8,16 +8,12 @@ function Test-Url {
     param (
         [string]$url
     )
-    if ($url -match '^https?://') {
-        return $true
-    } else {
-        return $false
-    }
+    return $url -match '^https?://'
 }
 
 function Get-PodcastEpisodes {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$rssFeedUrl,
         [int]$maxRetries
     )
@@ -38,8 +34,9 @@ function Get-PodcastEpisodes {
     # Create directory for podcast
     if (-not (Test-Path -Path $podcastTitle)) {
         Write-Host "Creating directory for podcast: $podcastTitle"
-        New-Item -ItemType Directory -Path $podcastTitle
-    } else {
+        New-Item -ItemType Directory -Path $podcastTitle | Out-Null
+    }
+    else {
         Write-Host "Directory already exists: $podcastTitle"
     }
 
@@ -48,7 +45,7 @@ function Get-PodcastEpisodes {
         # Remove invalid characters from episode title
         $episodeTitle = $_.title -replace '[\\/:*?"<>|]', ''
         $episodeUrl = $_.enclosure.url
-        $outputFile = "$podcastTitle\$episodeTitle.mp3"
+        $outputFile = Join-Path -Path $podcastTitle -ChildPath "$episodeTitle.mp3"
 
         if (-not (Test-Path -Path $outputFile)) {
             Write-Host "Downloading episode: $episodeTitle"
@@ -60,7 +57,8 @@ function Get-PodcastEpisodes {
                     Invoke-WebRequest -Uri $episodeUrl -OutFile $outputFile
                     Write-Host "Downloaded: $outputFile"
                     $success = $true
-                } catch {
+                }
+                catch {
                     $retryCount++
                     Write-Host "Failed to download $episodeTitle. Attempt $retryCount of $maxRetries."
                     if ($retryCount -eq $maxRetries) {
@@ -68,7 +66,8 @@ function Get-PodcastEpisodes {
                     }
                 }
             }
-        } else {
+        }
+        else {
             Write-Host "Episode already downloaded: $outputFile"
         }
     }
